@@ -156,6 +156,8 @@ class NarrativeMatrixItem(BaseModel):
     verdict_detail: str
     source_citation: str
     pdf_page: Optional[int] = None
+    source_url: Optional[str] = None
+    quote: Optional[str] = None
 
 
 class NarrativeMatrixResponse(BaseModel):

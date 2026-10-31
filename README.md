@@ -10,8 +10,8 @@ A mobile-first prototype for the ENAM Holdings AI Engineer Build Challenge. FINN
 | Financial figures and annual report / concall links for any NSE ticker | **Live** from screener.in. |
 | Corporate filings in the digest | **Sample data**: 20 hand-written filings. The window is measured back from the newest one. A live NSE fetch exists in the code but is not connected. |
 | Management bio and results scorecard | **Sample data**, attached to the sample filings. |
-| Narrative vs Numbers, Bull vs Bear, Balance Sheet, Cash Quality, Guidance | **Hand-written sample profiles** for TRENT, TATAMOTORS, POLYCAB, DIXON and ZOMATO. They have not been checked against the filings. Other tickers show "Not assessed". |
-| LLM analysis | **Not connected.** `backend/app/services/llm/router.py` is a Gemini client that nothing calls yet. |
+| Narrative vs Numbers for other tickers | **AI-generated** by Gemini from the company's last 4 concall transcripts and reported quarterly results. Each promise must quote the transcript, and quotes not found on the cited page are dropped. Verdicts themselves can still be wrong. Needs `GEMINI_API_KEY`. |
+| Bull vs Bear, Balance Sheet, Cash Quality, Guidance, and all research tabs for TRENT, TATAMOTORS, POLYCAB, DIXON and ZOMATO | **Hand-written sample profiles** for those 5 companies, not checked against the filings. Other tickers show "Not assessed" on these tabs. |
 
 An unknown ticker returns "No data found" rather than an invented report.
 
@@ -31,7 +31,7 @@ An unknown ticker returns "No data found" rather than an invented report.
 
 ## Run it
 
-Requires Python 3.10+ and Node.js 18+.
+Requires Python 3.10+ and Node.js 18+. For AI analysis, add `GEMINI_API_KEY=your_key` to a `.env` file in this folder.
 
 ```bash
 python3.12 run.py
@@ -69,8 +69,8 @@ Both call Yahoo Finance and screener.in, so they need internet access.
 │   └── services/
 │       ├── data_fetchers/    # Yahoo, screener.in, sample filings and profiles
 │       ├── push/             # Classifier, alerts, digest
-│       ├── pull/             # Research report assembly
-│       └── llm/              # Unused Gemini client
+│       ├── pull/             # Research report assembly and AI transcript analysis
+│       └── llm/              # Gemini client
 └── frontend/src/
     ├── App.tsx, api.ts, types/
     └── components/           # Header, BottomNav, PushDigestFeed, PullResearchHub,

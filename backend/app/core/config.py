@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import List, Dict
+from dotenv import load_dotenv
 from pydantic import BaseModel
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
@@ -8,6 +9,8 @@ BACKEND_DIR = BASE_DIR / "backend"
 DATA_DIR = BASE_DIR / "data"
 SEED_DIR = DATA_DIR / "seed"
 CACHE_DIR = DATA_DIR / "cache"
+
+load_dotenv(BASE_DIR / ".env")
 
 # Ensure directories exist
 SEED_DIR.mkdir(parents=True, exist_ok=True)

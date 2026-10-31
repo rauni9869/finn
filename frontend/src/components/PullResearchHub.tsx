@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   FullResearchReport, 
   NarrativeMatrixItem,
+  NarrativeMatrixResponse,
   StockInfo 
 } from '../types';
 import { API_BASE } from '../api';
@@ -27,6 +28,10 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
     'narrative' | 'financials' | 'thesis' | 'balance_sheet' | 'cash_quality' | 'guidance' | 'documents'
   >('narrative');
   const [selectedCitation, setSelectedCitation] = useState<string | null>(null);
+  const [analysis, setAnalysis] = useState<NarrativeMatrixResponse | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState<boolean>(false);
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  const matrix = analysis ?? report?.narrative_matrix ?? null;
 
   // Suggested quick tickers: portfolio staples + ad-hoc generalization tickers
   const quickTickers = [
@@ -46,6 +51,38 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
   useEffect(() => {
     fetchResearchReport(selectedTicker);
   }, [selectedTicker]);
+
+  // Companies without a sample profile get AI analysis of their own transcripts
+  const reportTicker = report?.data_source === 'live_screener' ? report.ticker : null;
+  useEffect(() => {
+    setAnalysis(null);
+    setAnalysisMessage(null);
+    if (!reportTicker) {
+      setAnalysisLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setAnalysisLoading(true);
+    fetch(`${API_BASE}/api/research/${encodeURIComponent(reportTicker)}/analysis`)
+      .then(async (res) => {
+        const body = await res.json().catch(() => null);
+        if (cancelled) return;
+        if (res.ok) {
+          setAnalysis(body);
+        } else {
+          setAnalysisMessage(body?.detail || 'AI analysis could not be completed.');
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAnalysisMessage('AI analysis could not be completed.');
+      })
+      .finally(() => {
+        if (!cancelled) setAnalysisLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [reportTicker]);
 
   const fetchResearchReport = async (ticker: string) => {
     setLoading(true);
@@ -164,7 +201,9 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
         <div className="px-3 py-2 bg-amber-950/30 border border-amber-800/40 rounded-lg text-xs text-amber-200/90">
           {report.data_source === 'curated_sample'
             ? 'Hand-written sample profile for demonstration. Citations and analysis are illustrative and have not been checked against the filings. Ratios and document links update live when available.'
-            : 'Live figures and document links from screener.in. Analysis of annual reports and transcripts is not available for this company yet.'}
+            : analysis
+            ? 'Live figures from screener.in. Promises vs delivery is AI-generated from this company\'s transcripts and reported results: quotes are checked against the transcript, but verdicts can be wrong, so check the source.'
+            : 'Live figures and document links from screener.in.'}
         </div>
       )}
 
@@ -196,7 +235,7 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
       )}
 
       {/* Active Research Content */}
-      {report && !loading && (
+      {report && matrix && !loading && (
         <div className="space-y-4">
           {/* Company Banner & Scorecard */}
           <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 sm:p-5 shadow-sm">
@@ -219,11 +258,11 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
                     Guidance Credibility
                   </div>
                   <div className="text-xs text-slate-300 font-medium">
-                    {report.narrative_matrix.overall_track_record_score}
+                    {analysisLoading ? 'Analysing...' : matrix.overall_track_record_score}
                   </div>
                 </div>
                 <div className="h-8 w-8 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center font-mono font-bold text-xs text-emerald-400">
-                  {report.narrative_matrix.delivered_pct === null || report.narrative_matrix.delivered_pct === undefined ? '—' : `${report.narrative_matrix.delivered_pct}%`}
+                  {analysisLoading ? '…' : matrix.delivered_pct === null || matrix.delivered_pct === undefined ? '—' : `${matrix.delivered_pct}%`}
                 </div>
               </div>
             </div>
@@ -340,18 +379,30 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
                   </p>
                 </div>
                 <div className="text-xs font-mono bg-slate-950 border border-slate-800 px-2.5 py-1 rounded text-slate-300">
-                  Coverage: {report.narrative_matrix.coverage_period}
+                  Coverage: {matrix.coverage_period}
                 </div>
               </div>
 
+              {analysisLoading && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-950/30 border border-emerald-800/40 text-xs text-emerald-200">
+                  <span className="inline-block animate-spin h-4 w-4 border-2 border-emerald-500 border-t-transparent rounded-full"></span>
+                  <span>Reading the last 4 earnings call transcripts. The first analysis of a company can take a minute or two...</span>
+                </div>
+              )}
+              {analysisMessage && !analysisLoading && (
+                <div className="p-3 rounded-lg bg-amber-950/30 border border-amber-800/40 text-xs text-amber-200/90">
+                  {analysisMessage}
+                </div>
+              )}
+
               {/* Summary synthesis */}
               <div className="bg-slate-950/80 border border-slate-800 rounded-lg p-3 text-xs text-slate-300 leading-relaxed">
-                <span className="font-semibold text-emerald-400">Analyst Verdict: </span>
-                {report.narrative_matrix.summary_verdict}
+                <span className="font-semibold text-emerald-400">Summary: </span>
+                {matrix.summary_verdict}
               </div>
 
               {/* 4-Quarter Comparison Table */}
-              {report.narrative_matrix.items.length > 0 && <div className="overflow-x-auto">
+              {matrix.items.length > 0 && <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400 font-medium">
@@ -363,13 +414,14 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/60 font-sans">
-                    {report.narrative_matrix.items.map((item, idx) => (
+                    {matrix.items.map((item, idx) => (
                       <tr key={idx} className="hover:bg-slate-850/40 transition-colors">
                         <td className="py-3 px-3 font-mono font-semibold text-slate-200 align-top whitespace-nowrap">
                           {item.quarter}
                         </td>
                         <td className="py-3 px-3 text-slate-300 leading-relaxed align-top">
-                          <p className="italic text-slate-300">"{item.management_promised}"</p>
+                          <p className="text-slate-300">{item.management_promised}</p>
+                          {item.quote && <p className="italic text-[11px] text-slate-400 mt-1">"{item.quote}"</p>}
                         </td>
                         <td className="py-3 px-3 text-slate-200 leading-relaxed align-top">
                           <p>{item.actual_delivered}</p>
@@ -381,6 +433,16 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
                           {getVerdictBadge(item.verdict)}
                         </td>
                         <td className="py-3 px-3 font-mono text-[11px] text-slate-400 align-top">
+                          {item.source_url ? (
+                            <a
+                              href={item.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-emerald-400 hover:text-emerald-300 hover:underline"
+                            >
+                              📎 {item.source_citation} ↗
+                            </a>
+                          ) : (
                           <button
                             type="button"
                             onClick={() => setSelectedCitation(item.source_citation)}
@@ -389,6 +451,7 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
                             <span>📎</span>
                             <span>{item.source_citation}</span>
                           </button>
+                          )}
                         </td>
                       </tr>
                     ))}

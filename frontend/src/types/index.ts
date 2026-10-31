@@ -123,6 +123,8 @@ export interface NarrativeMatrixItem {
   verdict_detail: string;
   source_citation: string;
   pdf_page?: number;
+  source_url?: string | null;
+  quote?: string | null;
 }
 
 export interface NarrativeMatrixResponse {

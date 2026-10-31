@@ -97,6 +97,27 @@ class ScreenerScraperService:
                     return self._to_float(match.group(1))
         return None
 
+    def _quarterly_results_text(self, soup) -> str:
+        section = soup.select_one("#quarters")
+        if not section:
+            return "Not available."
+        periods = [th.get_text(strip=True) for th in section.select("thead th")][1:]
+        lines = ["Metric | " + " | ".join(periods)]
+        for row in section.select("tbody tr"):
+            cells = [td.get_text(" ", strip=True) for td in row.find_all("td")]
+            if cells and cells[0].rstrip(" +") in ("Sales", "Revenue", "Operating Profit", "OPM %", "Profit before tax", "Net Profit"):
+                lines.append(" | ".join([cells[0].rstrip(" +")] + cells[1:]))
+        return "\n".join(lines)
+
+    def get_analysis_inputs(self, ticker: str) -> Optional[Dict[str, Any]]:
+        """Transcript links and reported results for the AI analysis, or None if unavailable."""
+        clean_ticker = ticker.upper().replace(".NS", "").replace(".BO", "")
+        try:
+            return self._get_live(clean_ticker)
+        except Exception as e:
+            logger.info(f"Could not load analysis inputs for {clean_ticker}: {e}")
+            return None
+
     def _fetch_company_page(self, query: str, headers: Dict[str, str]) -> requests.Response:
         """Tries the query as a ticker, then as a company name via screener's search."""
         slug = quote(SCREENER_TICKER_ALIASES.get(query, query), safe="")
@@ -155,6 +176,7 @@ class ScreenerScraperService:
 
         annual_report_links = []
         concall_transcript_links = []
+        transcripts = []
 
         annual_div = soup.select_one(".annual-reports")
         if annual_div:
@@ -165,16 +187,21 @@ class ScreenerScraperService:
 
         concalls_div = soup.select_one(".concalls")
         if concalls_div:
-            for a_tag in concalls_div.find_all("a", href=True):
-                parent_text = " ".join(a_tag.parent.text.split()) if a_tag.parent else ""
-                link_text = a_tag.text.strip()
-                label = f"{parent_text} ({link_text})" if parent_text else link_text
-                concall_transcript_links.append({"title": label, "url": a_tag["href"]})
+            for row in concalls_div.select("li"):
+                period_el = row.find("div")
+                period = " ".join(period_el.get_text(" ", strip=True).split()) if period_el else ""
+                for a_tag in row.find_all("a", href=True):
+                    link_text = a_tag.text.strip()
+                    concall_transcript_links.append({"title": f"{period} {link_text}".strip(), "url": a_tag["href"]})
+                    if link_text == "Transcript":
+                        transcripts.append({"period": period, "url": a_tag["href"]})
 
         return {
             "ticker": ticker,
             "company_name": name,
             "data_source": "live_screener",
+            "transcripts": transcripts,
+            "quarterly_results": self._quarterly_results_text(soup),
             "financial_snapshot": {
                 "ticker": ticker,
                 "company_name": name,
