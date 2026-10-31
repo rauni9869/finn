@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from app.core.config import BASE_DIR
 from app.api.routes import portfolio, digest, alerts, research
-from app.core.config import settings, BASE_DIR
+from app.core.config import settings
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -25,23 +26,24 @@ app.include_router(digest.router, prefix=settings.API_V1_PREFIX)
 app.include_router(alerts.router, prefix=settings.API_V1_PREFIX)
 app.include_router(research.router, prefix=settings.API_V1_PREFIX)
 
+@app.get("/")
+def root():
+    return {
+        "agent": "FINN",
+        "description": "Financial Investment Agent for Indian Equities",
+        "docs": "/docs",
+        "status": "online"
+    }
+
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "service": "FINN Backend Gateway"}
 
-# Serve the built frontend when it exists, so one service can host the whole app
+# Serve the built frontend on the deployed site
 FRONTEND_DIST = BASE_DIR / "frontend" / "dist"
 if FRONTEND_DIST.is_dir():
+    app.router.routes = [r for r in app.router.routes if getattr(r, "path", None) != "/"]
     app.mount("/", StaticFiles(directory=FRONTEND_DIST, html=True), name="frontend")
-else:
-    @app.get("/")
-    def root():
-        return {
-            "agent": "FINN",
-            "description": "Financial Investment Agent for Indian Equities",
-            "docs": "/docs",
-            "status": "online"
-        }
 
 if __name__ == "__main__":
     import uvicorn

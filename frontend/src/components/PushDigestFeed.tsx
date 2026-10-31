@@ -13,20 +13,6 @@ interface PushDigestFeedProps {
   onSelectStockForResearch: (ticker: string) => void;
 }
 
-const formatPct = (value?: number | null) =>
-  value === undefined || value === null ? '—' : `${value >= 0 ? '+' : ''}${value}%`;
-
-const Change: React.FC<{ value?: number | null }> = ({ value }) => {
-  const isDown = (value ?? 0) < 0;
-  const Arrow = isDown ? ArrowDownRight : ArrowUpRight;
-  return (
-    <span className={`flex items-center gap-1 ${isDown ? 'text-rose-400' : 'text-emerald-400'}`}>
-      <Arrow className="w-3 h-3" />
-      <span>{formatPct(value)} YoY</span>
-    </span>
-  );
-};
-
 export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
   announcements,
   alerts,
@@ -212,8 +198,8 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                       <span className="text-[10px] font-bold text-blue-400 uppercase tracking-wider font-mono">
                         {ann.results_enrichment.quarter} Headline Scorecard
                       </span>
-                      <span className={`text-[10px] font-mono font-medium ${(ann.results_enrichment.ebitda.margin_yoy_bps ?? 0) < 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
-                        OPM {ann.results_enrichment.ebitda.margin_pct}% ({(ann.results_enrichment.ebitda.margin_yoy_bps ?? 0) >= 0 ? '+' : ''}{ann.results_enrichment.ebitda.margin_yoy_bps} bps YoY)
+                      <span className="text-[10px] text-emerald-400 font-mono font-medium">
+                        OPM {ann.results_enrichment.ebitda.margin_pct}% ({ann.results_enrichment.ebitda.margin_yoy_bps ? `+${ann.results_enrichment.ebitda.margin_yoy_bps} bps` : ''})
                       </span>
                     </div>
 
@@ -225,10 +211,11 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                         <div className="font-bold text-white text-sm">
                           ₹{ann.results_enrichment.revenue.val_cr.toLocaleString('en-IN')} Cr
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] mt-0.5">
-                          <Change value={ann.results_enrichment.revenue.yoy_pct} />
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-0.5">
+                          <ArrowUpRight className="w-3 h-3" />
+                          <span>+{ann.results_enrichment.revenue.yoy_pct}% YoY</span>
                           <span className="text-gray-500">|</span>
-                          <span className="text-gray-300">{formatPct(ann.results_enrichment.revenue.qoq_pct)} QoQ</span>
+                          <span className="text-gray-300">+{ann.results_enrichment.revenue.qoq_pct}% QoQ</span>
                         </div>
                       </div>
 
@@ -238,10 +225,9 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                         <div className="font-bold text-white text-sm">
                           ₹{ann.results_enrichment.ebitda.val_cr.toLocaleString('en-IN')} Cr
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] mt-0.5">
-                          <Change value={ann.results_enrichment.ebitda.yoy_pct} />
-                          <span className="text-gray-500">|</span>
-                          <span className="text-gray-300">{formatPct(ann.results_enrichment.ebitda.qoq_pct)} QoQ</span>
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-0.5">
+                          <ArrowUpRight className="w-3 h-3" />
+                          <span>+{ann.results_enrichment.ebitda.yoy_pct}% YoY</span>
                         </div>
                       </div>
 
@@ -251,10 +237,9 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                         <div className="font-bold text-white text-sm">
                           ₹{ann.results_enrichment.pbt.val_cr.toLocaleString('en-IN')} Cr
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] mt-0.5">
-                          <Change value={ann.results_enrichment.pbt.yoy_pct} />
-                          <span className="text-gray-500">|</span>
-                          <span className="text-gray-300">{formatPct(ann.results_enrichment.pbt.qoq_pct)} QoQ</span>
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-0.5">
+                          <ArrowUpRight className="w-3 h-3" />
+                          <span>+{ann.results_enrichment.pbt.yoy_pct}% YoY</span>
                         </div>
                       </div>
 
@@ -264,10 +249,9 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                         <div className="font-bold text-emerald-400 text-sm">
                           ₹{ann.results_enrichment.pat.val_cr.toLocaleString('en-IN')} Cr
                         </div>
-                        <div className="flex items-center gap-1 text-[10px] mt-0.5">
-                          <Change value={ann.results_enrichment.pat.yoy_pct} />
-                          <span className="text-gray-500">|</span>
-                          <span className="text-gray-300">{formatPct(ann.results_enrichment.pat.qoq_pct)} QoQ</span>
+                        <div className="flex items-center gap-1 text-[10px] text-emerald-400 mt-0.5">
+                          <ArrowUpRight className="w-3 h-3" />
+                          <span>+{ann.results_enrichment.pat.yoy_pct}% YoY</span>
                         </div>
                       </div>
                     </div>
@@ -311,7 +295,7 @@ export const PushDigestFeed: React.FC<PushDigestFeedProps> = ({
                 {/* Card Footer: Timestamp, Why Should I Care button, Deep Dive hint */}
                 <div className="mt-3 pt-2.5 border-t border-gray-800/70 flex items-center justify-between text-[11px]">
                   <span className="text-gray-500 font-mono">
-                    {new Date(ann.timestamp).toLocaleString([], { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(ann.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} IST
                   </span>
 
                   <div className="flex items-center gap-2">

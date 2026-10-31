@@ -14,7 +14,7 @@ class LLMRouter:
         if self.api_key:
             try:
                 from google import genai
-                self._client = genai.Client(api_key=self.api_key, http_options={"timeout": 180000})
+                self._client = genai.Client(api_key=self.api_key)
                 logger.info("Initialized Google GenAI client successfully.")
             except Exception as e:
                 logger.warning(f"Could not initialize GenAI client: {e}")
@@ -26,8 +26,7 @@ class LLMRouter:
         self,
         prompt: str,
         system_instruction: Optional[str] = None,
-        model: str = "gemini-flash-latest",
-        config: Optional[Dict[str, Any]] = None
+        model: str = "gemini-2.5-flash"
     ) -> Optional[str]:
         if not self._client:
             return None
@@ -35,7 +34,7 @@ class LLMRouter:
             response = self._client.models.generate_content(
                 model=model,
                 contents=prompt,
-                config={**(config or {}), **({"system_instruction": system_instruction} if system_instruction else {})} or None
+                config={"system_instruction": system_instruction} if system_instruction else None
             )
             return response.text
         except Exception as e:

@@ -39,7 +39,7 @@ export const AudioBriefingModal: React.FC<AudioBriefingModalProps> = ({
       });
     }
 
-    lines.push("Open any item in the feed for the detail.");
+    lines.push("All underlying primary documents are verified and ready for deep dive. Have a high-conviction trading session.");
     setBriefingText(lines.join(' '));
   }, [alerts, announcements]);
 

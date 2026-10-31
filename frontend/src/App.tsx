@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { API_BASE } from './api';
+import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
 import { PushDigestFeed } from './components/PushDigestFeed';
 import { PullResearchHub } from './components/PullResearchHub';
@@ -26,8 +25,6 @@ export const App: React.FC = () => {
   const [portfolioCount, setPortfolioCount] = useState<number>(18);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataAsOf, setDataAsOf] = useState<string | null>(null);
-  const latestAlertRequest = useRef(0);
 
   // Modals
   const [isAlertModalOpen, setIsAlertModalOpen] = useState<boolean>(false);
@@ -45,19 +42,13 @@ export const App: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        window_hours: String(hours),
-        vol_thresh: String(alertConfig.volume_multiplier_threshold),
-        price_thresh: String(alertConfig.price_change_pct_threshold),
-      });
-      const res = await fetch(`${API_BASE}/api/digest?${params}`);
+      const res = await fetch(`/api/digest?window_hours=${hours}`);
       if (!res.ok) {
         throw new Error(`Failed to fetch digest (HTTP ${res.status})`);
       }
       const data: WindowedDigestResponse = await res.json();
       setAnnouncements(data.announcements);
       setAlerts(data.active_alerts);
-      setDataAsOf(data.is_sample_data ? data.data_as_of ?? null : null);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Error connecting to backend API');
@@ -69,7 +60,7 @@ export const App: React.FC = () => {
   // Fetch Portfolio Count
   const fetchPortfolioMetadata = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/portfolio`);
+      const res = await fetch('/api/portfolio');
       if (res.ok) {
         const data = await res.json();
         setPortfolioCount(data.length);
@@ -87,23 +78,22 @@ export const App: React.FC = () => {
   // Handle changing alert configuration
   const handleUpdateConfig = async (newConfig: AlertThresholdConfig) => {
     setAlertConfig(newConfig);
-    const requestId = ++latestAlertRequest.current;
     try {
-      const res = await fetch(`${API_BASE}/api/alerts/evaluate`, {
+      const res = await fetch('/api/alerts/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newConfig),
       });
-      if (!res.ok) {
-        throw new Error(`Failed to evaluate alerts (HTTP ${res.status})`);
-      }
-      const updatedAlerts: TriggeredAlert[] = await res.json();
-      // Sliders fire quickly, so ignore any response that isn't for the latest position
-      if (requestId === latestAlertRequest.current) {
-        setAlerts(updatedAlerts);
+      if (res.ok) {
+        // Refresh alerts with new thresholds
+        const alertsRes = await fetch('/api/alerts');
+        if (alertsRes.ok) {
+          const updatedAlerts = await alertsRes.json();
+          setAlerts(updatedAlerts);
+        }
       }
     } catch (err) {
-      console.error('Failed to evaluate alert thresholds', err);
+      console.error('Failed to persist alert threshold config', err);
     }
   };
 
@@ -206,16 +196,6 @@ export const App: React.FC = () => {
         )}
 
         {/* Tab 1: Push Digest Feed */}
-        {activeTab === 'push' && loading && announcements.length === 0 && (
-          <div className="mb-4 p-6 text-center text-xs text-slate-400 bg-slate-900 border border-slate-800 rounded-xl">
-            Loading filings and end-of-day market data. The first load can take about 30 seconds...
-          </div>
-        )}
-        {activeTab === 'push' && dataAsOf && (
-          <div className="mb-3 px-3 py-2 text-[11px] text-amber-200/90 bg-amber-950/30 border border-amber-800/40 rounded-lg">
-            Filings are sample data, with the window measured back from {new Date(dataAsOf).toLocaleDateString()}. Prices and alerts are live end-of-day data.
-          </div>
-        )}
         {activeTab === 'push' && (
           <PushDigestFeed
             announcements={announcements}

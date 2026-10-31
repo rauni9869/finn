@@ -143,8 +143,6 @@ class WindowedDigestResponse(BaseModel):
     routine_collapsed_count: int
     announcements: List[CorporateAnnouncement]
     active_alerts: List[TriggeredAlert] = Field(default_factory=list)
-    is_sample_data: bool = True
-    data_as_of: Optional[str] = None
 
 
 # Pull Research Dimensions Schemas
@@ -156,16 +154,13 @@ class NarrativeMatrixItem(BaseModel):
     verdict_detail: str
     source_citation: str
     pdf_page: Optional[int] = None
-    source_url: Optional[str] = None
-    quote: Optional[str] = None
 
 
 class NarrativeMatrixResponse(BaseModel):
     ticker: str
     company_name: str
     coverage_period: str
-    overall_track_record_score: str  # e.g., "3 of 4 promises delivered"
-    delivered_pct: Optional[int] = None  # None when no promises were assessed
+    overall_track_record_score: str  # e.g., "75% Reliability (3/4 promises delivered)"
     summary_verdict: str
     items: List[NarrativeMatrixItem]
 
@@ -173,16 +168,16 @@ class NarrativeMatrixResponse(BaseModel):
 class FinancialSnapshotResponse(BaseModel):
     ticker: str
     company_name: str
-    ttm_revenue_cr: Optional[float] = None
-    ebitda_margin_pct: Optional[float] = None
-    pat_cr: Optional[float] = None
-    roce_pct: Optional[float] = None
-    roe_pct: Optional[float] = None
-    pe_ratio: Optional[float] = None
-    ev_ebitda: Optional[float] = None
-    sales_cagr_3yr: Optional[float] = None
-    profit_cagr_3yr: Optional[float] = None
-    debt_to_equity: Optional[float] = None
+    ttm_revenue_cr: float
+    ebitda_margin_pct: float
+    pat_cr: float
+    roce_pct: float
+    roe_pct: float
+    pe_ratio: float
+    ev_ebitda: float
+    sales_cagr_3yr: float
+    profit_cagr_3yr: float
+    debt_to_equity: float
     primary_source_notes: str
 
 
@@ -248,7 +243,6 @@ class FullResearchReport(BaseModel):
     ticker: str
     company_name: str
     timestamp: str
-    data_source: str  # "curated_sample" (hand-written profile) or "live_screener"
     financial_snapshot: FinancialSnapshotResponse
     narrative_matrix: NarrativeMatrixResponse
     bull_bear_thesis: BullBearThesisResponse

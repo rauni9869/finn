@@ -55,16 +55,15 @@ for i in {1..30}; do
 done
 
 # 2. Start Vite Frontend
-echo "Starting Vite frontend server on http://localhost:3000..."
+echo "Starting Vite frontend server on http://localhost:5173..."
 cd frontend
-[ -d node_modules ] || npm install
 npm run dev -- --host &
 FRONTEND_PID=$!
 cd ..
 
 echo "======================================================================="
 echo "  🚀 FINN is LIVE:"
-echo "     • Frontend Web App:  http://localhost:3000"
+echo "     • Frontend Web App:  http://localhost:5173"
 echo "     • Backend API Docs:  http://localhost:8000/docs"
 echo "     • Health Endpoint:   http://localhost:8000/api/health"
 echo "======================================================================="

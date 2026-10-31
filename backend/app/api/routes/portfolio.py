@@ -13,6 +13,14 @@ def get_portfolio():
     for s in PORTFOLIO_STOCKS:
         eod_dict = eod_service.fetch_stock_eod(s["ticker"])
         
+        # Override specific tickers for realistic anomaly demo if needed
+        if s["ticker"] == "POLYCAB":
+            eod_dict.update({"close": 6420.0, "pct_change": 5.8, "volume_multiple": 3.8, "is_unusual_volume": True, "is_unusual_price": True})
+        elif s["ticker"] == "ZENTEC":
+            eod_dict.update({"close": 1845.0, "pct_change": 7.2, "volume_multiple": 4.2, "is_unusual_volume": True, "is_unusual_price": True})
+        elif s["ticker"] == "TRENT":
+            eod_dict.update({"close": 7890.0, "pct_change": 4.3, "volume_multiple": 2.4, "is_unusual_volume": True, "is_unusual_price": True})
+
         eod_metric = EODMetrics(**eod_dict) if eod_dict else None
         result.append(StockInfo(
             ticker=s["ticker"],

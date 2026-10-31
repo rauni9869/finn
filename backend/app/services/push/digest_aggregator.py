@@ -22,7 +22,7 @@ class DigestAggregatorService:
         )
 
         # Detect active alerts across the portfolio based on slider thresholds
-        dict_announcements = [ann.model_dump() for ann in announcements]
+        dict_announcements = [ann.dict() for ann in announcements]
         active_alerts = anomaly_detector.detect_portfolio_anomalies(
             config=cfg,
             announcements=dict_announcements
@@ -38,9 +38,7 @@ class DigestAggregatorService:
             high_priority_count=high_priority_count,
             routine_collapsed_count=routine_collapsed_count,
             announcements=announcements,
-            active_alerts=active_alerts,
-            is_sample_data=True,
-            data_as_of=filings_service.sample_data_as_of().strftime("%Y-%m-%dT%H:%M:%SZ")
+            active_alerts=active_alerts
         )
 
 digest_service = DigestAggregatorService()

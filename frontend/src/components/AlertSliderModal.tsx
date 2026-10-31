@@ -92,7 +92,7 @@ export const AlertSliderModal: React.FC<AlertSliderModalProps> = ({
             />
             <div className="flex justify-between text-[10px] text-gray-500 font-mono mt-1">
               <span>1.2x (Sensitive)</span>
-              <span>2.0x (Default)</span>
+              <span>2.5x (Default)</span>
               <span>5.0x (Extreme)</span>
             </div>
           </div>
@@ -127,7 +127,7 @@ export const AlertSliderModal: React.FC<AlertSliderModalProps> = ({
           <div className="p-2.5 rounded-lg bg-gray-950 border border-gray-800 text-[11px] text-gray-400 flex items-start gap-2">
             <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
             <span>
-              These thresholds apply to end-of-day price and volume. High-priority filings are always shown first in the digest.
+              Material filings (Quarterly Results, M&amp;A, CEO/CFO changes, and Regulatory orders) always trigger regardless of price movements.
             </span>
           </div>
         </div>

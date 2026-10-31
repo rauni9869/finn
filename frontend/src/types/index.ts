@@ -40,7 +40,7 @@ export interface StockInfo {
   sector: string;
   market_cap: string;
   is_portfolio: boolean;
-  eod?: EODMetrics | null;
+  eod?: EODMetrics;
 }
 
 export interface MetricDelta {
@@ -105,8 +105,6 @@ export interface WindowedDigestResponse {
   routine_collapsed_count: number;
   announcements: CorporateAnnouncement[];
   active_alerts: TriggeredAlert[];
-  is_sample_data: boolean;
-  data_as_of?: string | null;
 }
 
 export interface AlertThresholdConfig {
@@ -123,8 +121,6 @@ export interface NarrativeMatrixItem {
   verdict_detail: string;
   source_citation: string;
   pdf_page?: number;
-  source_url?: string | null;
-  quote?: string | null;
 }
 
 export interface NarrativeMatrixResponse {
@@ -132,7 +128,6 @@ export interface NarrativeMatrixResponse {
   company_name: string;
   coverage_period: string;
   overall_track_record_score: string;
-  delivered_pct?: number | null;
   summary_verdict: string;
   items: NarrativeMatrixItem[];
 }
@@ -140,16 +135,16 @@ export interface NarrativeMatrixResponse {
 export interface FinancialSnapshotResponse {
   ticker: string;
   company_name: string;
-  ttm_revenue_cr: number | null;
-  ebitda_margin_pct: number | null;
-  pat_cr: number | null;
-  roce_pct: number | null;
-  roe_pct: number | null;
-  pe_ratio: number | null;
-  ev_ebitda: number | null;
-  sales_cagr_3yr: number | null;
-  profit_cagr_3yr: number | null;
-  debt_to_equity: number | null;
+  ttm_revenue_cr: number;
+  ebitda_margin_pct: number;
+  pat_cr: number;
+  roce_pct: number;
+  roe_pct: number;
+  pe_ratio: number;
+  ev_ebitda: number;
+  sales_cagr_3yr: number;
+  profit_cagr_3yr: number;
+  debt_to_equity: number;
   primary_source_notes: string;
 }
 
@@ -221,7 +216,6 @@ export interface FullResearchReport {
   ticker: string;
   company_name: string;
   timestamp: string;
-  data_source: 'curated_sample' | 'live_screener';
   financial_snapshot: FinancialSnapshotResponse;
   narrative_matrix: NarrativeMatrixResponse;
   bull_bear_thesis: BullBearThesisResponse;

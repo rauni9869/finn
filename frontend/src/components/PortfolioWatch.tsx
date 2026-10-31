@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { StockInfo } from '../types';
-import { API_BASE } from '../api';
 
 interface PortfolioWatchProps {
   onSelectStock: (ticker: string) => void;
@@ -21,7 +20,7 @@ export const PortfolioWatch: React.FC<PortfolioWatchProps> = ({ onSelectStock })
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/portfolio`);
+      const res = await fetch('/api/portfolio');
       if (!res.ok) {
         throw new Error(`Failed to load portfolio (HTTP ${res.status})`);
       }
@@ -54,7 +53,7 @@ export const PortfolioWatch: React.FC<PortfolioWatchProps> = ({ onSelectStock })
             <h2 className="text-base font-bold text-slate-100 flex items-center gap-2">
               <span>Investment Universe</span>
               <span className="text-xs bg-slate-800 border border-slate-700 text-slate-300 font-mono px-2 py-0.5 rounded">
-                18 Core Holdings
+                18 Core Holdings + Ad-hoc Universe
               </span>
             </h2>
             <p className="text-xs text-slate-400 mt-1">
@@ -187,7 +186,7 @@ export const PortfolioWatch: React.FC<PortfolioWatchProps> = ({ onSelectStock })
 
                       {/* EOD Price */}
                       <td className="py-3.5 px-3 text-right font-mono font-bold text-slate-200 align-middle">
-                        {eod?.close ? `₹${eod.close.toLocaleString()}` : 'Unavailable'}
+                        ₹{eod?.close ? eod.close.toLocaleString() : '—'}
                       </td>
 
                       {/* Day Change */}
@@ -215,7 +214,7 @@ export const PortfolioWatch: React.FC<PortfolioWatchProps> = ({ onSelectStock })
                             isVolumeSpike ? 'text-amber-400 font-bold' : 'text-slate-400'
                           }`}
                         >
-                          {eod ? `${volMultiple.toFixed(2)}x` : '—'}
+                          {volMultiple.toFixed(2)}x
                         </span>
                         <div className="text-[10px] text-slate-500">
                           {eod ? (eod.volume / 100000).toFixed(1) + 'L shares' : ''}

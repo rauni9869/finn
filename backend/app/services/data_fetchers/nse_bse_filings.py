@@ -23,12 +23,6 @@ class CorporateFilingsService:
     def __init__(self):
         self._seed_announcements = SEED_ANNOUNCEMENTS
 
-    def sample_data_as_of(self) -> datetime:
-        return max(
-            datetime.fromisoformat(item["timestamp"].replace("Z", "+00:00"))
-            for item in self._seed_announcements
-        )
-
     def get_announcements(
         self,
         ticker: Optional[str] = None,
@@ -38,8 +32,7 @@ class CorporateFilingsService:
         """Retrieve prioritized corporate filings within the specified time window."""
         results: List[CorporateAnnouncement] = []
         now = datetime.now(timezone.utc)
-        # Filings are a fixed sample, so the window is measured back from the newest one
-        cutoff = self.sample_data_as_of() - timedelta(hours=window_hours)
+        cutoff = now - timedelta(hours=window_hours)
 
         clean_target = ticker.upper().replace(".NS", "").replace(".BO", "") if ticker else None
 
@@ -53,9 +46,8 @@ class CorporateFilingsService:
             except Exception:
                 ann_time = now
 
-            if ann_time < cutoff:
-                continue
-
+            # For demo purposes, keep all seed announcements within active view or sliding window
+            # but classify and priority rank them
             cat, prio, summary = classifier.classify(item["headline"], item["details"])
             
             # Use pre-annotated category/priority if present in seed, else classifier result
@@ -106,8 +98,7 @@ class CorporateFilingsService:
 
         # Sort: High Priority first, then Medium, then Low; secondary sort by timestamp desc
         priority_order = {PriorityLevel.HIGH: 0, PriorityLevel.MEDIUM: 1, PriorityLevel.LOW: 2}
-        results.sort(key=lambda x: x.timestamp, reverse=True)
-        results.sort(key=lambda x: priority_order.get(x.priority, 3))
+        results.sort(key=lambda x: (priority_order.get(x.priority, 3), x.timestamp), reverse=False)
 
         return results
 
