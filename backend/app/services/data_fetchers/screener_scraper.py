@@ -3,6 +3,7 @@ import logging
 import re
 import time
 from typing import Dict, Any, Optional
+from urllib.parse import quote, unquote
 import requests
 from bs4 import BeautifulSoup
 from app.services.data_fetchers.seed_data import SEED_RESEARCH_PROFILES
@@ -12,8 +13,6 @@ logger = logging.getLogger(__name__)
 # Common exchange ticker to Screener slug overrides (e.g. recent demergers/reclassifications)
 SCREENER_TICKER_ALIASES = {
     "TATAMOTORS": "TMCV",
-    "M&M": "MM",
-    "BAJAJ-AUTO": "BAJAJAUTO",
     "L&T": "LT",
     "MCDOWELL-N": "UNITDSPR"
 }
@@ -33,8 +32,6 @@ class ScreenerScraperService:
     def get_company_fundamentals(self, ticker: str) -> Dict[str, Any]:
         """Fetch fundamentals for any NSE ticker. Raises CompanyDataUnavailable rather than inventing data."""
         clean_ticker = ticker.upper().replace(".NS", "").replace(".BO", "")
-        seed = self._seed_profiles.get(clean_ticker)
-
         live_data = None
         from app.core.config import settings
         if settings.ENABLE_LIVE_SCRAPING:
@@ -42,6 +39,11 @@ class ScreenerScraperService:
                 live_data = self._get_live(clean_ticker)
             except Exception as e:
                 logger.info(f"Live screener scrape for {clean_ticker} failed ({e}).")
+
+        # A company name resolves to its ticker during the scrape
+        seed = self._seed_profiles.get(clean_ticker)
+        if not seed and live_data:
+            seed = self._seed_profiles.get(live_data["ticker"])
 
         if seed:
             profile = copy.deepcopy(seed)
@@ -59,7 +61,7 @@ class ScreenerScraperService:
         if live_data:
             return live_data
         raise CompanyDataUnavailable(
-            f"No data found for {clean_ticker}. Check the NSE ticker, or try again if the data source is unreachable."
+            f"No data found for {clean_ticker}. Check the ticker or company name, or try again if the data source is unreachable."
         )
 
     def _get_live(self, ticker: str) -> Dict[str, Any]:
@@ -95,11 +97,18 @@ class ScreenerScraperService:
                     return self._to_float(match.group(1))
         return None
 
-    def _fetch_company_page(self, ticker: str, headers: Dict[str, str]) -> requests.Response:
-        slug = SCREENER_TICKER_ALIASES.get(ticker, ticker)
+    def _fetch_company_page(self, query: str, headers: Dict[str, str]) -> requests.Response:
+        """Tries the query as a ticker, then as a company name via screener's search."""
+        slug = quote(SCREENER_TICKER_ALIASES.get(query, query), safe="")
         resp = requests.get(f"https://www.screener.in/company/{slug}/consolidated/", headers=headers, timeout=10)
         if resp.status_code == 404:
             resp = requests.get(f"https://www.screener.in/company/{slug}/", headers=headers, timeout=10)
+        if resp.status_code == 404:
+            search = requests.get("https://www.screener.in/api/company/search/", params={"q": query}, headers=headers, timeout=10)
+            search.raise_for_status()
+            matches = search.json()
+            if matches:
+                resp = requests.get(f"https://www.screener.in{matches[0]['url']}", headers=headers, timeout=10)
         return resp
 
     def _scrape_screener_live(self, ticker: str) -> Dict[str, Any]:
@@ -111,6 +120,10 @@ class ScreenerScraperService:
         resp = self._fetch_company_page(ticker, headers)
         if resp.status_code != 200:
             raise Exception(f"Screener returned status {resp.status_code}")
+
+        slug_match = re.search(r"/company/([^/]+)/", resp.url)
+        if slug_match:
+            ticker = unquote(slug_match.group(1))
 
         soup = BeautifulSoup(resp.text, "html.parser")
         # Companies without consolidated accounts return an empty consolidated page

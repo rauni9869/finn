@@ -23,6 +23,7 @@ class PullResearchEngine:
     def get_company_deep_dive(self, ticker: str) -> FullResearchReport:
         clean_ticker = ticker.upper().replace(".NS", "").replace(".BO", "")
         raw_data = screener_service.get_company_fundamentals(clean_ticker)
+        clean_ticker = raw_data.get("ticker", clean_ticker)
 
         company_name = raw_data.get("company_name", f"{clean_ticker} Ltd")
         now_str = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")

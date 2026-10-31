@@ -16,6 +16,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
+from urllib.parse import quote
 from fastapi.testclient import TestClient
 from app.main import app
 
@@ -69,6 +70,13 @@ def test_triggered_alerts():
     assert len(loose) >= 1
     assert len(strict) == 0
     print(f"✓ Alert Thresholds Verified ({len(loose)} loose vs {len(strict)} strict)")
+
+def test_search_by_company_name():
+    for query, ticker in [("Infosys", "INFY"), ("Tata Steel", "TATASTEEL"), ("M&M", "M&M"), ("BAJAJ-AUTO", "BAJAJ-AUTO")]:
+        res = client.get(f"/api/research/{quote(query)}")
+        assert res.status_code == 200, query
+        assert res.json()["ticker"] == ticker, (query, res.json()["ticker"])
+    print("✓ Search By Company Name Verified")
 
 def test_no_invented_research():
     res = client.get("/api/research/NOTAREALTICKER")
@@ -162,6 +170,7 @@ if __name__ == "__main__":
     test_push_digest_and_collapse()
     test_digest_window_filters()
     test_triggered_alerts()
+    test_search_by_company_name()
     test_no_invented_research()
     test_push_enrichments()
     test_pull_research_flagship_trent()

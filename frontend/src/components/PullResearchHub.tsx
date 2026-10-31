@@ -127,8 +127,8 @@ export const PullResearchHub: React.FC<PullResearchHubProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Enter any NSE ticker (e.g. TRENT, DIXON, INFY, BEL)..."
-              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase tracking-wide font-mono"
+              placeholder="Enter a ticker or company name (e.g. INFY, Tata Steel)..."
+              className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-mono"
             />
           </div>
           <button
